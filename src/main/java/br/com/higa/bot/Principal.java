@@ -47,6 +47,12 @@ public class Principal {
 		ViaCep viaCep = new ViaCep();
 		System.out.println("### BOT [Carlos_Evd_Higa] INICIADO ###");
 
+
+		//
+		// TODO: Implementar log de conversa
+		//
+
+
 		while (true){
 			updatesResponse =  bot.execute(new GetUpdates().limit(OFF_SET_LIMIT).offset(offSet));
 			List<Update> mensagensRecebidas = updatesResponse.updates();
@@ -60,16 +66,25 @@ public class Principal {
 					baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
 					sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
 				} else {
-					if(msgRecebidaTxt.startsWith(OpcoesBot.CEP.getNome())){ // TODO if resposta valida...
+					if(msgRecebidaTxt.startsWith(OpcoesBot.CEP.getNome())){
 						int intAux = OpcoesBot.CEP.getNome().length();
 						StringBuilder strBuiderAux = new StringBuilder(msgRecebidaTxt);
 						String cep = strBuiderAux.delete(0, intAux).toString();
 
 						if(cep.trim().matches("[0-9]{5}-[0-9]{3}") ||
 								cep.trim().matches("[0-9]{8}")){
-							JsonObject jsonObject = viaCep.getEnderecoByCep(cep.trim());
 							baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
-							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, parseViaCepJson(jsonObject)));
+
+							JsonObject jsonObject = viaCep.getEnderecoByCep(cep.trim());
+							String resposta;
+
+							if("true".equalsIgnoreCase(String.valueOf(jsonObject.get("erro")))){
+								resposta = Constants.MSG_ERRO_CEP_NAO_ENCONTRADO;
+							} else {
+								resposta = viaCep.parseViaCepJson(jsonObject);
+							}
+
+							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, resposta));
 						} else {
 							baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
 							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_CEP_INVALIDO));
@@ -103,23 +118,5 @@ public class Principal {
 	}
 
 	static SendMessage criaMsgDeResposta(Object msgRecebidaId, String resposta){ return new SendMessage(msgRecebidaId, resposta); }
-
-	static String parseViaCepJson(JsonObject jsonObject){
-
-
-		// TODO Tratar quando o CEP enviado nao existe!!!
-		// TODO Eh correto este metodo estar aqui???
-
-
-		return new StringBuilder()
-					.append("CEP: ").append(jsonObject.get("cep")).append(System.getProperty("line.separator"))
-					.append("Logradouro: ").append(jsonObject.get("logradouro")).append(System.getProperty("line.separator"))
-					.append("Complemento: ").append(jsonObject.get("complemento")).append(System.getProperty("line.separator"))
-					.append("Bairro: ").append(jsonObject.get("bairro")).append(System.getProperty("line.separator"))
-					.append("Cidade: ").append(jsonObject.get("localidade")).append(System.getProperty("line.separator"))
-					.append("UF: ").append(jsonObject.get("uf")).append(System.getProperty("line.separator"))
-					.append("DDD: ").append(jsonObject.get("ddd")).append(System.getProperty("line.separator"))
-				.toString();
-	}
 
 }

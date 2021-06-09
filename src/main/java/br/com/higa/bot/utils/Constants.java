@@ -9,5 +9,6 @@ public class Constants {
 
     public static final String MSG_ERRO_OPCAO_INVALIDA = "Opcao invalida";
     public static final String MSG_ERRO_CEP_INVALIDO = "CEP invalido. Envie com ou sem traco.";
+    public static final String MSG_ERRO_CEP_NAO_ENCONTRADO = "CEP nao encontrado.";
     public static final String MSG_ERRO_VIA_CEP_REQUEST = "Erro no servico ViaCep. Tente novamente mais tarde.";
 }
