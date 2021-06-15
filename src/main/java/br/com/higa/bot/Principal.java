@@ -1,8 +1,9 @@
 package br.com.higa.bot;
 
-import br.com.higa.bot.enums.OpcoesBot;
-import br.com.higa.bot.service.ViaCep;
-import br.com.higa.bot.utils.Constants;
+import static br.com.higa.bot.utils.Constants.BOT_TOKEN;
+
+import java.util.List;
+
 import com.google.gson.JsonObject;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Update;
@@ -14,9 +15,11 @@ import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.GetUpdatesResponse;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import java.util.List;
-
-import static br.com.higa.bot.utils.Constants.BOT_TOKEN;
+import br.com.caelum.stella.boleto.Boleto;
+import br.com.higa.bot.enums.OpcoesBot;
+import br.com.higa.bot.service.GeradorDeBoletos;
+import br.com.higa.bot.service.ViaCep;
+import br.com.higa.bot.utils.Constants;
 
 public class Principal {
 	// Criacao do bot!!!
@@ -90,6 +93,30 @@ public class Principal {
 							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_CEP_INVALIDO));
 							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
 						}
+					} else if (msgRecebidaTxt.startsWith(OpcoesBot.BOLETOS_EM_ABERTO.getNome())){
+						GeradorDeBoletos boletoSantander = new GeradorDeBoletos("santander");
+						GeradorDeBoletos boletoItau = new GeradorDeBoletos("itau");
+						
+						Boleto boleto1 = boletoSantander.getBoleto();
+						Boleto boleto2 = boletoItau.getBoleto();
+						
+						StringBuilder boletos = new StringBuilder();
+						
+						boletos.append("02 boletos encontrados:\n\n");
+						boletos.append("Banco Santander");
+						boletos.append("\nData de vencimento "+boletoSantander.getVencimentoBoleto());
+						boletos.append("\nValor R$ "+boleto1.getValorBoleto());
+						boletos.append("\nLinha Digitavel:\n"+boleto1.getLinhaDigitavel());
+						
+						boletos.append("\n\n-----\n\n");
+						
+						boletos.append("Banco Itau");
+						boletos.append("\nData de vencimento "+boletoItau.getVencimentoBoleto());
+						boletos.append("\nValor R$ "+boleto2.getValorFormatado());
+						boletos.append("\nLinha Digitavel:\n"+boleto2.getLinhaDigitavel());
+						
+						sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, boletos.toString()));
+					
 					} else {
 						baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
 						sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_OPCAO_INVALIDA));
