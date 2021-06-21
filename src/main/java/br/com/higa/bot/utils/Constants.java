@@ -1,7 +1,7 @@
 package br.com.higa.bot.utils;
 
 public class Constants {
-    public static final String BOT_TOKEN = "1875167067:AAHOEI1GDp2MokLCC29xNvK2nZTusCo4AH8";
+    public static final String BOT_TOKEN = "SEU_TOKEN";
     public static final String BOT_START = "/start";
 
     public static final String URL_VIA_CEP = "https://viacep.com.br/ws/";
