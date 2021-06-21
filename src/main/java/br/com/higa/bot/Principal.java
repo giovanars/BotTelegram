@@ -3,7 +3,9 @@ package br.com.higa.bot;
 import static br.com.higa.bot.utils.Constants.BOT_TOKEN;
 
 import java.util.List;
+import java.util.Random;
 
+import br.com.higa.bot.utils.MotivacionalConstants;
 import com.google.gson.JsonObject;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Update;
@@ -48,13 +50,10 @@ public class Principal {
 
 	public static void main(String[] args) {
 		ViaCep viaCep = new ViaCep();
-		System.out.println("### BOT [Carlos_Evd_Higa] INICIADO ###");
-
-
+		System.out.println("### BOT INICIADO ###");
 		//
 		// TODO: Implementar log de conversa
 		//
-
 
 		while (true){
 			updatesResponse =  bot.execute(new GetUpdates().limit(OFF_SET_LIMIT).offset(offSet));
@@ -65,63 +64,16 @@ public class Principal {
 				msgRecebidaId = mensagemRecebida.message().chat().id();
 				msgRecebidaTxt = mensagemRecebida.message().text();
 
-				if(Constants.BOT_START.equalsIgnoreCase(msgRecebidaTxt)){
-					baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
-					sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
+				if(Constants.MSG_OLA_1.equalsIgnoreCase(msgRecebidaTxt) || Constants.MSG_OLA_2.equalsIgnoreCase(msgRecebidaTxt) || Constants.MSG_OI_1.equalsIgnoreCase(msgRecebidaTxt) || Constants.BOT_START.equalsIgnoreCase(msgRecebidaTxt)) {
+					executaAcaOlá(mensagemRecebida);
+				} else if(msgRecebidaTxt.startsWith(OpcoesBot.CEP.getNome())){
+					executarAcaoCep();
+				} else if (msgRecebidaTxt.startsWith(OpcoesBot.BOLETOS_EM_ABERTO.getNome())){
+					executarAcaoGerarBoleto();
+				} else if (msgRecebidaTxt.startsWith(OpcoesBot.MENSAGEM_MOTIVACIONAL.getNome())) {
+					executarAcaoMensagemMotivacional();
 				} else {
-					if(msgRecebidaTxt.startsWith(OpcoesBot.CEP.getNome())){
-						int intAux = OpcoesBot.CEP.getNome().length();
-						StringBuilder strBuiderAux = new StringBuilder(msgRecebidaTxt);
-						String cep = strBuiderAux.delete(0, intAux).toString();
-
-						if(cep.trim().matches("[0-9]{5}-[0-9]{3}") ||
-								cep.trim().matches("[0-9]{8}")){
-							baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
-
-							JsonObject jsonObject = viaCep.getEnderecoByCep(cep.trim());
-							String resposta;
-
-							if("true".equalsIgnoreCase(String.valueOf(jsonObject.get("erro")))){
-								resposta = Constants.MSG_ERRO_CEP_NAO_ENCONTRADO;
-							} else {
-								resposta = viaCep.parseViaCepJson(jsonObject);
-							}
-
-							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, resposta));
-						} else {
-							baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
-							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_CEP_INVALIDO));
-							sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
-						}
-					} else if (msgRecebidaTxt.startsWith(OpcoesBot.BOLETOS_EM_ABERTO.getNome())){
-						GeradorDeBoletos boletoSantander = new GeradorDeBoletos("santander");
-						GeradorDeBoletos boletoItau = new GeradorDeBoletos("itau");
-						
-						Boleto boleto1 = boletoSantander.getBoleto();
-						Boleto boleto2 = boletoItau.getBoleto();
-						
-						StringBuilder boletos = new StringBuilder();
-						
-						boletos.append("02 boletos encontrados:\n\n");
-						boletos.append("Banco Santander");
-						boletos.append("\nData de vencimento "+boletoSantander.getVencimentoBoleto());
-						boletos.append("\nValor R$ "+boleto1.getValorBoleto());
-						boletos.append("\nLinha Digitavel:\n"+boleto1.getLinhaDigitavel());
-						
-						boletos.append("\n\n-----\n\n");
-						
-						boletos.append("Banco Itau");
-						boletos.append("\nData de vencimento "+boletoItau.getVencimentoBoleto());
-						boletos.append("\nValor R$ "+boleto2.getValorFormatado());
-						boletos.append("\nLinha Digitavel:\n"+boleto2.getLinhaDigitavel());
-						
-						sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, boletos.toString()));
-					
-					} else {
-						baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
-						sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_OPCAO_INVALIDA));
-						sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
-					}
+					executaAcaoOpcaoInvalida();
 				}
 			}
 		}
@@ -146,4 +98,75 @@ public class Principal {
 
 	static SendMessage criaMsgDeResposta(Object msgRecebidaId, String resposta){ return new SendMessage(msgRecebidaId, resposta); }
 
+	static void executaAcaoOpcaoInvalida(){
+		baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_OPCAO_INVALIDA));
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
+	}
+
+	static void executaAcaOlá(Update mensagemRecebida){
+		String nome = mensagemRecebida.message().from().firstName();
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, "Olá, " + nome + ", tudo bem?"));
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
+	}
+
+	static void executarAcaoCep(){
+		ViaCep viaCep = new ViaCep();
+		int intAux = OpcoesBot.CEP.getNome().length();
+		StringBuilder strBuiderAux = new StringBuilder(msgRecebidaTxt);
+		String cep = strBuiderAux.delete(0, intAux).toString();
+
+		if(cep.trim().matches("[0-9]{5}-[0-9]{3}") || cep.trim().matches("[0-9]{8}")){
+			baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
+
+			JsonObject jsonObject = viaCep.getEnderecoByCep(cep.trim());
+			String resposta;
+
+			if("true".equalsIgnoreCase(String.valueOf(jsonObject.get("erro")))){
+				resposta = Constants.MSG_ERRO_CEP_NAO_ENCONTRADO;
+			} else {
+				resposta = viaCep.parseViaCepJson(jsonObject);
+			}
+
+			sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, resposta));
+		} else {
+			baseResponse = bot.execute(criarAcao(msgRecebidaId, ChatAction.typing.name()));
+			sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, Constants.MSG_ERRO_CEP_INVALIDO));
+			sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
+		}
+	}
+
+	static void executarAcaoGerarBoleto(){
+		GeradorDeBoletos boletoSantander = new GeradorDeBoletos("santander");
+		GeradorDeBoletos boletoItau = new GeradorDeBoletos("itau");
+
+		Boleto boleto1 = boletoSantander.getBoleto();
+		Boleto boleto2 = boletoItau.getBoleto();
+
+		StringBuilder boletos = new StringBuilder();
+
+		boletos.append("02 boletos encontrados:\n\n");
+		boletos.append("Banco Santander");
+		boletos.append("\nData de vencimento "+ boletoSantander.getVencimentoBoleto());
+		boletos.append("\nValor R$ "+ boleto1.getValorBoleto());
+		boletos.append("\nLinha Digitavel:\n"+ boleto1.getLinhaDigitavel());
+
+		boletos.append("\n\n-----\n\n");
+
+		boletos.append("Banco Itau");
+		boletos.append("\nData de vencimento "+ boletoItau.getVencimentoBoleto());
+		boletos.append("\nValor R$ "+ boleto2.getValorFormatado());
+		boletos.append("\nLinha Digitavel:\n"+ boleto2.getLinhaDigitavel());
+
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, boletos.toString()));
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
+	}
+
+	static void executarAcaoMensagemMotivacional(){
+		String[] mensagems = {MotivacionalConstants.MSG_1, MotivacionalConstants.MSG_2, MotivacionalConstants.MSG_3, MotivacionalConstants.MSG_4, MotivacionalConstants.MSG_5};
+		Random property = new Random();
+		int a = property.nextInt(mensagems.length);
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, mensagems[a]));
+		sendResponse = bot.execute(criaMsgDeResposta(msgRecebidaId, getTodasOpcoesBot()));
+	}
 }
