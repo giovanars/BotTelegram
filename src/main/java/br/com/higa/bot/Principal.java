@@ -50,10 +50,14 @@ public class Principal {
 
 	public static void main(String[] args) {
 		ViaCep viaCep = new ViaCep();
+
 		System.out.println("### BOT INICIADO ###");
+
+
 		//
 		// TODO: Implementar log de conversa
 		//
+
 
 		while (true){
 			updatesResponse =  bot.execute(new GetUpdates().limit(OFF_SET_LIMIT).offset(offSet));
